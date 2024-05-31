@@ -1,0 +1,133 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  password  String
+  name      String
+  age       String
+  phone     String
+  avatar    String
+  role      Role
+  ratings   Rating[]
+  comments  Comment[]
+  Booking   Booking[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Movie {
+  id          Int        @id @default(autoincrement())
+  title       String
+  description String
+  releaseDate DateTime
+  duration    Int
+  trailerUrl  String
+  normalPrice Float
+  vipPrice    Float
+  seats       Seat[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  Showtime    Showtime[]
+  Rating      Rating[]
+  Comment     Comment[]
+  Cinema      Cinema?    @relation(fields: [cinemaId], references: [id])
+  cinemaId    Int?
+  theaterId   Int?
+  theater     Theater[]
+}
+
+model Showtime {
+  id        Int       @id @default(autoincrement())
+  time      DateTime
+  movieId   Int
+  movie     Movie     @relation(fields: [movieId], references: [id])
+  seats     Seat[]
+  bookings  Booking[]
+  Theater   Theater?  @relation(fields: [theaterId], references: [id])
+  theaterId Int?
+}
+
+model Cinema {
+  id        Int       @id @default(autoincrement())
+  name      String
+  address   String
+  movies    Movie[] // Mỗi rạp có thể chiếu nhiều bộ phim
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Theater   Theater[]
+}
+
+model Theater {
+  id        Int        @id @default(autoincrement())
+  name      String
+  capacity  Int // Số lượng ghế trong phòng chiếu
+  cinemaId  Int // Khóa ngoại đến Cinema
+  cinema    Cinema     @relation(fields: [cinemaId], references: [id])
+  showtimes Showtime[] // Mỗi phòng chiếu có nhiều suất chiếu
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  Movie     Movie?     @relation(fields: [movieId], references: [id])
+  movieId   Int?
+}
+
+model Booking {
+  id           Int           @id @default(autoincrement())
+  userId       Int
+  showtimeId   Int
+  user         User          @relation(fields: [userId], references: [id])
+  showtime     Showtime      @relation(fields: [showtimeId], references: [id])
+  bookingSeats BookingSeat[]
+}
+
+model Seat {
+  id           Int           @id @default(autoincrement())
+  number       String
+  showtimeId   Int
+  isAvailable  Boolean       @default(true)
+  showtime     Showtime      @relation(fields: [showtimeId], references: [id])
+  bookingSeats BookingSeat[]
+  Movie        Movie?        @relation(fields: [movieId], references: [id])
+  movieId      Int?
+  price        Float // Thêm trường price
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model BookingSeat {
+  id        Int     @id @default(autoincrement())
+  bookingId Int
+  seatId    Int
+  booking   Booking @relation(fields: [bookingId], references: [id])
+  seat      Seat    @relation(fields: [seatId], references: [id])
+}
+
+model Rating {
+  id      Int   @id @default(autoincrement())
+  userId  Int
+  movieId Int
+  score   Int
+  user    User  @relation(fields: [userId], references: [id])
+  movie   Movie @relation(fields: [movieId], references: [id])
+}
+
+model Comment {
+  id      Int    @id @default(autoincrement())
+  userId  Int
+  movieId Int
+  content String
+  user    User   @relation(fields: [userId], references: [id])
+  movie   Movie  @relation(fields: [movieId], references: [id])
+}
+
+enum Role {
+  USER
+  ADMIN
+}
